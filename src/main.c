@@ -61,10 +61,15 @@ void reset_task(void)
 
 int main(void)
 {
+#if BOOTLOADER
     board_check_app_start();
+#endif
+
     board_init();
 
+#if BOOTLOADER
     board_check_tinyuf2_start();
+#endif
 
     tusb_init();
 
