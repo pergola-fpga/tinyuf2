@@ -1,0 +1,9 @@
+TUF2_CHIP_FAMILY = mimxrt10xx
+TUF2_CHIP_MEMBER = mimxrt101x
+TUF2_CHIP_VARIANT = MIMXRT1011DAE5A
+VARIANT = flash_app
+
+CFLAGS += -DBOARD_BLINK_INTERVAL=100
+
+flash-hf2: $(BUILD)/$(BOARD)-firmware.bin
+	RUST_LOG=debug RUST_BACKTRACE=full hf2 -v 0x239a -p 0x0058 flash --address $(APP_START_ADDRESS) --file $^
