@@ -6,6 +6,8 @@ CFLAGS += -DCPU_MIMXRT1011DAE5A
 
 ifeq ($(VARIANT), ram)
 	LD_FILE = ../../hw/chip/$(TUF2_CHIP_FAMILY)/$(TUF2_CHIP_MEMBER)/MIMXRT1011xxxxx_ram.ld
+else ifeq ($(VARIANT), flash_app)
+	LD_FILE = ../../hw/chip/$(TUF2_CHIP_FAMILY)/$(TUF2_CHIP_MEMBER)/MIMXRT1011xxxxx_flexspi_nor_app.ld
 else
 	LD_FILE = ../../hw/chip/$(TUF2_CHIP_FAMILY)/$(TUF2_CHIP_MEMBER)/MIMXRT1011xxxxx_flexspi_nor.ld
 endif
