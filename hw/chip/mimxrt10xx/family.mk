@@ -61,3 +61,20 @@ else
 		-DXIP_BOOT_HEADER_ENABLE=1 \
 		-DBOOTLOADER=1
 endif
+
+# flash by using redlink
+flash: $(BUILD)/$(BOARD)-firmware.elf
+	$(CRT_EMU_CM_REDLINK) \
+			-g  \
+			-p MIMXRT1011xxxxx \
+			--flash-load-exec $(BUILD)/$(BOARD)-firmware.elf \
+			--connectscript=RT1010_connect.scp \
+			--debug 4 \
+			--no-packed
+
+debug: $(BUILD)/$(BOARD)-firmware.elf
+	arm-none-eabi-gdb $< \
+		-ex "set non-stop on" \
+		-ex "target extended-remote | $(CRT_EMU_CM_REDLINK) -g -pMIMXRT1011xxxxx --connectscript=RT1010_connect.scp --no-packed"
+
+.PHONY: debug
