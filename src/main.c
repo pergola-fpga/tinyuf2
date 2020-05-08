@@ -31,12 +31,13 @@
 #include "bsp.h"
 #include "tusb.h"
 #include "hid.h"
+#include "fpga.h"
 
 static uint32_t blink_interval_ms = BOARD_BLINK_INTERVAL;
 
 uint32_t reset_millis = 0;
 
-void led_blinking_task(void)
+__attribute__ ((long_call, section(".data.$SRAM_LOWER"))) void led_blinking_task(void)
 {
     static uint32_t start_ms = 0;
     static bool led_state = false;
@@ -80,6 +81,7 @@ int main(void)
         hf2_hid_task();
         led_blinking_task();
         reset_task();
+        fpga_task();
     }
 
     return 0;

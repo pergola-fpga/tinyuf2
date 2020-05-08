@@ -30,6 +30,11 @@
 #include "uf2.h"
 #include "tusb.h"
 
+const char infoUf2File[] = //
+    "UF2 Bootloader " UF2_VERSION "\r\n"
+    "Model: " PRODUCT_NAME "\r\n"
+    "Board-ID: " BOARD_ID "\r\n";
+
 #if CFG_TUD_MSC
 
 #define SERIAL0 (*(uint32_t *)0x0080A00C)
@@ -83,11 +88,6 @@ struct TextFile
     const char name[11];
     const char *content;
 };
-
-const char infoUf2File[] = //
-    "UF2 Bootloader " UF2_VERSION "\r\n"
-    "Model: " PRODUCT_NAME "\r\n"
-    "Board-ID: " BOARD_ID "\r\n";
 
 const char indexFile[] = //
     "<!doctype html>\n"

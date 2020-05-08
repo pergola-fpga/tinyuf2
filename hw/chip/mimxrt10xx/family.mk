@@ -7,6 +7,7 @@ CFLAGS += \
 	-mcpu=cortex-m7 \
 	-mfloat-abi=hard \
 	-mfpu=fpv5-d16 \
+	-mlong-calls \
 	-D__ARMVFP__=0 -D__ARMFPV5__=0 \
 	-D__START=main \
 	-DCFG_TUSB_MCU=OPT_MCU_MIMXRT10XX \
@@ -74,7 +75,8 @@ flash: $(BUILD)/$(BOARD)-firmware.elf
 
 debug: $(BUILD)/$(BOARD)-firmware.elf
 	arm-none-eabi-gdb $< \
-		-ex "set non-stop on" \
 		-ex "target extended-remote | $(CRT_EMU_CM_REDLINK) -g -pMIMXRT1011xxxxx --connectscript=RT1010_connect.scp --no-packed"
+
+#		-ex "set non-stop on" \
 
 .PHONY: debug
