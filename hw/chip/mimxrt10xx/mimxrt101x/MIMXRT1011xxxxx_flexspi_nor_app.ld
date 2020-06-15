@@ -57,8 +57,6 @@ SECTIONS
         . = ALIGN(4);
         __data_start__ = .;     /* create a global symbol at data start */
 
-        *(.data.$SRAM_LOWER*)
-
         *(.data*)               /* .data* sections */
         *flexspi_nor_flash_ops.o(.text*)
         *fsl_flexspi.o(.text*)

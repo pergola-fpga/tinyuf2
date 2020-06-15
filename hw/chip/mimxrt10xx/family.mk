@@ -7,7 +7,6 @@ CFLAGS += \
 	-mcpu=cortex-m7 \
 	-mfloat-abi=hard \
 	-mfpu=fpv5-d16 \
-	-mlong-calls \
 	-D__ARMVFP__=0 -D__ARMFPV5__=0 \
 	-D__START=main \
 	-DCFG_TUSB_MCU=OPT_MCU_MIMXRT10XX \

@@ -37,7 +37,7 @@ static uint32_t blink_interval_ms = BOARD_BLINK_INTERVAL;
 
 uint32_t reset_millis = 0;
 
-__attribute__ ((long_call, section(".data.$SRAM_LOWER"))) void led_blinking_task(void)
+void led_blinking_task(void)
 {
     static uint32_t start_ms = 0;
     static bool led_state = false;
@@ -73,13 +73,14 @@ int main(void)
 #endif
 
     tusb_init();
+    fpga_init();
 
     printf("Hello TinyUF2!\r\n");
 
     while (1) {
         tud_task();
         hf2_hid_task();
-        led_blinking_task();
+        // led_blinking_task();
         reset_task();
         fpga_task();
     }

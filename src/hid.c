@@ -36,6 +36,10 @@
 #include "hid.h"
 #include "assert.h"
 
+#ifdef BITSTREAM_START_ADDRESS
+#include "fpga.h"
+#endif
+
 #if CFG_TUD_HID
 
 #if HF2_USE_HID
@@ -70,6 +74,7 @@ static struct {
 } state;
 
 static uint16_t crcCache[256];
+static uint32_t last_address;
 
 #define CRC16POLY 0x1021
 
@@ -154,13 +159,25 @@ void send_hf2_response(HID_InBuffer *pkt, uint32_t size) {
 }
 
 static void checksum_pages(HID_InBuffer *pkt, int start, int num) {
-    for (int i = 0; i < num; ++i) {
-        uint8_t *data = (uint8_t *)start + i * BOARD_FLASH_PAGE_SIZE;
-        uint16_t crc = 0;
-        for (int j = 0; j < BOARD_FLASH_PAGE_SIZE; ++j) {
-            crc = add_crc(*data++, crc);
+    if ((start < APP_START_ADDRESS) ||
+        (start > (APP_START_ADDRESS + BOARD_FLASH_SIZE)) ||
+        ((start + num * BOARD_FLASH_PAGE_SIZE) > (APP_START_ADDRESS + BOARD_FLASH_SIZE))) {
+        for (int i = 0; i < num; ++i) {
+            // Report an incorrect crc if the requested
+            // address is not in the flash.
+            // There is a small risk that the crc matches the real crc,
+            // but this is better than nothing.
+            pkt->resp.data16[i] = 0xfefe;
         }
-        pkt->resp.data16[i] = crc;
+    } else {
+        for (int i = 0; i < num; ++i) {
+            uint8_t *data = (uint8_t *)start + i * BOARD_FLASH_PAGE_SIZE;
+            uint16_t crc = 0;
+            for (int j = 0; j < BOARD_FLASH_PAGE_SIZE; ++j) {
+                crc = add_crc(*data++, crc);
+            }
+            pkt->resp.data16[i] = crc;
+        }
     }
     send_hf2_response(pkt, num * 2);
 }
@@ -216,8 +233,18 @@ void process_core(HID_InBuffer *pkt) {
         return;
 
     case HF2_CMD_RESET_INTO_APP:
-        board_flash_flush();
-        reset_millis = board_millis() + 30;
+        if (last_address == 0 ||
+                (last_address >= APP_START_ADDRESS &&
+                (last_address < (APP_START_ADDRESS + BOARD_FLASH_SIZE)))
+            ) {
+            board_flash_flush();
+            reset_millis = board_millis() + 30;
+        }
+#ifdef BITSTREAM_START_ADDRESS
+        if (last_address >= BITSTREAM_START_ADDRESS) {
+            fpga_bitstream_finish();
+        }
+#endif
         break;
     case HF2_CMD_RESET_INTO_BOOTLOADER:
         _bootloader_dbl_tap = DBL_TAP_MAGIC;
@@ -232,9 +259,17 @@ void process_core(HID_InBuffer *pkt) {
         checkDataSize(write_flash_page, BOARD_FLASH_PAGE_SIZE);
         // first send ACK and then start writing, while getting the next packet
         send_hf2_response(pkt, 0);
-        if (cmd->write_flash_page.target_addr >= APP_START_ADDRESS) {
+        if (cmd->write_flash_page.target_addr >= APP_START_ADDRESS &&
+            cmd->write_flash_page.target_addr < (BOARD_FLASH_BASE + BOARD_FLASH_SIZE)) {
             board_flash_write_blocks((uint8_t*) cmd->write_flash_page.data, (cmd->write_flash_page.target_addr - BOARD_FLASH_BASE) / UF2_PAYLOAD_SIZE, 1);
         }
+#ifdef BITSTREAM_START_ADDRESS
+        else if (cmd->write_flash_page.target_addr >= BITSTREAM_START_ADDRESS) {
+            printf("Bitstream %08lx\r\n", cmd->write_flash_page.target_addr);
+            fpga_bitstream_write((uint8_t*) cmd->write_flash_page.data, cmd->write_flash_page.target_addr - BITSTREAM_START_ADDRESS, BOARD_FLASH_PAGE_SIZE);
+        }
+#endif
+        last_address = cmd->write_flash_page.target_addr;
         return;
 #if HF2_USE_HID_EXT
     case HF2_CMD_WRITE_WORDS:
