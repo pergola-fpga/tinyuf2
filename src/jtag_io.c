@@ -59,7 +59,7 @@ void jtag_io_init(void)
     /* GPIO configuration of JTAG_TDI on GPIO_AD_04 (pin 56) */
     gpio_pin_config_t JTAG_TDI_config = {
         .direction = kGPIO_DigitalOutput,
-        .outputLogic = 1U,
+        .outputLogic = 0U,
         .interruptMode = kGPIO_NoIntmode
     };
     /* Initialize GPIO functionality on GPIO_AD_04 (pin 56) */
@@ -68,7 +68,7 @@ void jtag_io_init(void)
     /* GPIO configuration of JTAG_TMS on GPIO_AD_05 (pin 55) */
     gpio_pin_config_t JTAG_TMS_config = {
         .direction = kGPIO_DigitalOutput,
-        .outputLogic = 1U,
+        .outputLogic = 0U,
         .interruptMode = kGPIO_NoIntmode
     };
     /* Initialize GPIO functionality on GPIO_AD_05 (pin 55) */
@@ -77,7 +77,7 @@ void jtag_io_init(void)
     /* GPIO configuration of JTAG_TCK on GPIO_AD_06 (pin 52) */
     gpio_pin_config_t JTAG_TCK_config = {
         .direction = kGPIO_DigitalOutput,
-        .outputLogic = 1U,
+        .outputLogic = 0U,
         .interruptMode = kGPIO_NoIntmode
     };
     /* Initialize GPIO functionality on GPIO_AD_06 (pin 52) */
@@ -98,12 +98,12 @@ void jtag_io_init(void)
     GPIO_PinWrite
         (BOARD_INITPINS_FPGA_PROGRAMN_PERIPHERAL,
             BOARD_INITPINS_FPGA_PROGRAMN_CHANNEL, 0);
-    _sleep(1000000);
+    _sleep(100000);
 
     GPIO_PinWrite
         (BOARD_INITPINS_FPGA_PROGRAMN_PERIPHERAL,
             BOARD_INITPINS_FPGA_PROGRAMN_CHANNEL, 1);
-    _sleep(1000000);
+    _sleep(100000);
 
 }
 
@@ -115,15 +115,15 @@ void jtag_io_tms(bool value)
 
 void jtag_io_tck(void)
 {
-    _sleep(100000);
+    GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
+              BOARD_INITPINS_JTAG_TCK_CHANNEL, 0);
+
+    _sleep(10000);
 
     GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
               BOARD_INITPINS_JTAG_TCK_CHANNEL, 1);
 
-    _sleep(100000);
-
-    GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
-              BOARD_INITPINS_JTAG_TCK_CHANNEL, 0);
+    _sleep(10000);
 
 }
 
@@ -139,3 +139,17 @@ uint32_t jtag_io_tdo(void)
               BOARD_INITPINS_JTAG_TDO_CHANNEL);
 }
 
+uint32_t pulse_clock_and_read_tdo(void)
+{
+    GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
+              BOARD_INITPINS_JTAG_TCK_CHANNEL, 0);
+    _sleep(10000);
+
+    uint32_t out = jtag_io_tdo();
+
+    GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
+              BOARD_INITPINS_JTAG_TCK_CHANNEL, 1);
+    _sleep(10000);
+
+    return out;
+}

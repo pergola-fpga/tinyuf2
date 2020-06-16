@@ -32,6 +32,7 @@
 #include "tusb.h"
 #include "hid.h"
 #include "fpga.h"
+#include "jtag.h"
 #include "jtag_io.h"
 #include "jtag_ecp5.h"
 
@@ -79,6 +80,7 @@ int main(void)
     tusb_init();
     // fpga_init();
     jtag_io_init();
+    jtag_init();
 
     printf("Hello TinyUF2!\r\n");
 

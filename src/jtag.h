@@ -35,8 +35,7 @@ typedef enum e_TAPState
 /**
  * Performs the start-of-day tasks necessary to talk JTAG to our FPGA.
  */
-void jtag_init(int ifnum, const char *devstr, bool slow_clock);
-
+void jtag_init(void);
 
 /**
  * De-inits the JTAG connection, so the JTAG chain. is no longer driven.

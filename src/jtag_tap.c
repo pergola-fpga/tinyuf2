@@ -3,6 +3,9 @@
  *    portions copyright (c) 2015 Marcelo Roberto Jimenez <marcelo.jimenez (at) gmail (dot) com>.
  *    portions copyright (c) 2019 Katherine J. Temkin <kate@ktemkin.com>
  *    portions copyright (c) 2019 Great Scott Gadgets <ktemkin@greatscottgadgets.com>
+ * 
+ * https://github.com/mrjimenez/JTAG/blob/master/src/JTAGTAP.cpp
+ * https://github.com/gregdavill/ecpprog
  */
 
 #include <string.h>
@@ -116,125 +119,14 @@ void jtag_set_current_state(uint8_t state)
     current_state = state;
 }
 
-void jtag_error(int status){
-    // mpsse_error(status);
-}
-
-void jtag_deinit(){
-    // mpsse_close();
-}
-
 /**
  * Performs any start-of-day tasks necessary to talk JTAG to our FPGA.
  */
-void jtag_init(int ifnum, const char *devstr, bool slow_clock)
+void jtag_init(void)
 {
-    // mpsse_init(ifnum, devstr, slow_clock);
-
     jtag_set_current_state(STATE_TEST_LOGIC_RESET);
     jtag_go_to_state(STATE_TEST_LOGIC_RESET);
 }
-
-// uint8_t data[32*1024];
-// uint8_t* ptr;
-uint16_t rx_cnt;
-
-// extern struct ftdi_context mpsse_ftdic;
-
-// static inline void jtag_pulse_clock_and_read_tdo(bool tms, bool tdi)
-// {
-//     *ptr++ = MC_DATA_TMS | MC_DATA_IN | MC_DATA_LSB | MC_DATA_BITS | MC_DATA_OCN;
-//     *ptr++ =  0;        
-//     *ptr++ = (tdi ? 0x80 : 0) | (tms ? 0x01 : 0);
-//     rx_cnt++;
-// }
-
-static void _jtag_tap_shift(
-    uint8_t *input_data,
-    uint8_t *output_data,
-    uint32_t data_bits,
-    bool must_end)
-{
-
-    //printf("_jtag_tap_shift(0x%08x,0x%08x,%u,%s);\n",input_data, output_data, data_bits, must_end ? "true" : "false");
-    uint32_t bit_count = data_bits;
-    uint32_t byte_count = (data_bits + 7) / 8;
-    rx_cnt = 0;
-    // ptr = data;
-
-    for (uint32_t i = 0; i < byte_count; ++i) {
-        uint8_t byte_out = input_data[i];
-        uint8_t byte_in = 0;
-        for (int j = 0; j < 8 && bit_count-- > 0; ++j) {
-            bool tms = false;
-            if (bit_count == 0 && must_end) {
-                tms = true;
-                jtag_state_ack(1);
-            }
-            // jtag_pulse_clock_and_read_tdo(tms, byte_out & 1);
-            jtag_io_tms(tms);
-            jtag_io_tck();
-            jtag_io_tdi(byte_out & 1);
-            jtag_io_tck();
-            byte_in = (byte_in >> 1) | (jtag_io_tdo() << 7);
-            // byte_in = (byte_in << 1) | jtag_io_tdo();
-
-            byte_out >>= 1;
-        }
-        output_data[i] = byte_in;
-    }
-
-    // mpsse_xfer(data, ptr-data, rx_cnt);
-    
-    /* Data out from the FTDI is actually from an internal shift register
-     * Instead of reconstructing the bitpattern, we can just take every 8th byte.*/
-    // for(int i = 0; i < rx_cnt/8; i++)
-    // 	output_data[i] = data[7+i*8];
-}
-
-
-static void jtag_shift_bytes(
-    uint8_t *input_data,
-    uint8_t *output_data,
-    uint32_t data_bits,
-    bool must_end)
-{
-
-    /* Sanity check */
-    if(data_bits % 8 != 0){
-        printf("Error %lu is not a byte multiple\n", data_bits);
-    }
-    //printf("jtag_shift_bytes(0x%08x,0x%08x,%u,%s);\n",input_data, output_data, data_bits, must_end ? "true" : "false");
-    uint32_t byte_count = data_bits / 8;
-
-    // jtag_io_tms(0);
-
-    for (uint32_t i = 0; i < byte_count; ++i) {
-        uint8_t byte_out = input_data[i];
-        uint8_t byte_in = 0;
-        for (int j = 0; j < 8; ++j) {
-            jtag_io_tdi(byte_out & 1);
-            jtag_io_tck();
-            // byte_in = (byte_in >> 1) | (jtag_io_tdo() << 7);
-            byte_in = (byte_in << 1) | jtag_io_tdo();
-            byte_out >>= 1;
-        }
-        output_data[i] = byte_in;
-    }
-
-
-    // data[0] = MC_DATA_OUT | MC_DATA_IN | MC_DATA_LSB | MC_DATA_OCN;
-    // data[1] = (byte_count - 1); 
-    // data[2] = (byte_count - 1) >> 8;        
-    // memcpy(data + 3, input_data, byte_count);
-
-    // mpsse_xfer(data, byte_count + 3, byte_count);
-
-    // memcpy(output_data, data, byte_count);
-}
-
-
-#define MIN(a,b) (a < b) ? a : b
 
 void jtag_tap_shift(
     uint8_t *input_data,
@@ -242,36 +134,24 @@ void jtag_tap_shift(
     uint32_t data_bits,
     bool must_end)
 {
-    /* if 'must_end' the send last byte seperately 
-     * This way we toggle TMS on the last clock cycle */
-    if(must_end)
-        data_bits -= 8;
-    
-    uint32_t data_bits_sent = 0;
-    if(data_bits){
-        while(data_bits_sent != data_bits){
+	uint32_t bit_count = data_bits;
+    uint32_t byte_count = (data_bits + 7) / 8;
+	for (uint32_t i = 0; i < byte_count; ++i) {
+		uint8_t byte_out = input_data[byte_count - 1 - i];
+		uint8_t tdo_byte = 0;
+		for (int j = 0; j < 8 && bit_count-- > 0; ++j) {
+			if (bit_count == 0 && must_end) {
+				jtag_io_tms(1);
+				jtag_state_ack(1);
+			}
+            jtag_io_tdi(byte_out & 1);
+			byte_out >>= 1;
+			uint32_t tdo = pulse_clock_and_read_tdo();
+			tdo_byte |= tdo << j;
+		}
+		output_data[byte_count - 1 - i] = tdo_byte;
+	}
 
-            uint32_t _data_bits = MIN(4096 + 2048, data_bits - data_bits_sent);
-
-            jtag_shift_bytes(
-                input_data + data_bits_sent/8,
-                output_data + data_bits_sent/8,
-                _data_bits,
-                false
-            );
-            data_bits_sent += _data_bits;
-        }
-    }
-
-    /* Send our last byte */
-    if(must_end){
-        _jtag_tap_shift(
-            input_data + data_bits_sent/8,
-            output_data + data_bits_sent/8,
-            8,
-            must_end
-        );
-    }
 }
 
 void jtag_state_ack(bool tms)
@@ -283,47 +163,24 @@ void jtag_state_ack(bool tms)
     }
 }
 
+static void state_step(bool tms)
+{
+    jtag_io_tms(tms);
+    jtag_io_tck();
+	jtag_state_ack(tms);
+}
+
 void jtag_go_to_state(unsigned state)
 {
-
-    if (state == STATE_TEST_LOGIC_RESET) {
-        for (int i = 0; i < 5; ++i) {
-            jtag_state_ack(true);
-        }
-
-        // uint8_t data[3] = { 
-        //     MC_DATA_TMS | MC_DATA_LSB | MC_DATA_BITS,
-        //     5 - 1,
-        //     0b11111
-        // };
-        // mpsse_xfer(data, 3, 0);
-        jtag_io_tms(1);
-        jtag_io_tck();
-        for (int j = 0; j < 5; ++j) {
-            jtag_io_tdi(1);
-            jtag_io_tck();
-        }
-        jtag_io_tms(0);
-        
-    } else {
-        jtag_io_tms(1);
-        jtag_io_tck();
-        while (jtag_current_state() != state) {
-            // uint8_t data[3] = {
-            //     MC_DATA_TMS | MC_DATA_LSB | MC_DATA_ICN | MC_DATA_BITS,
-            //     0,
-            //     (tms_map[jtag_current_state()] >> state) & 1
-            // };
-
-            jtag_io_tdi((tms_map[jtag_current_state()] >> state) & 1);
-            jtag_io_tck();
-
-            jtag_state_ack((tms_map[jtag_current_state()] >> state) & 1);
-            // mpsse_xfer(data, 3, 0);
-
-        }
-        jtag_io_tms(0);
-    }
+	if (state == STATE_TEST_LOGIC_RESET) {
+		for (int i = 0; i < 5; ++i) {
+			state_step(true);
+		}
+	} else {
+		while (jtag_current_state() != state) {
+			state_step((tms_map[jtag_current_state()] >> state) & 1);
+		}
+	}
 }
 
 void jtag_wait_time(uint32_t microseconds)
