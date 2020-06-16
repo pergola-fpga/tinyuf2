@@ -132,12 +132,14 @@ void jtag_tap_shift(
     const uint8_t *input_data,
     uint8_t *output_data,
     uint32_t data_bits,
-    bool must_end)
+    bool must_end,
+    bool flip)
 {
     uint32_t bit_count = data_bits;
     uint32_t byte_count = (data_bits + 7) / 8;
     for (uint32_t i = 0; i < byte_count; ++i) {
-        uint8_t byte_out = input_data[byte_count - 1 - i];
+        // uint8_t byte_out = input_data[byte_count - 1 - i];
+        uint8_t byte_out = flip ? input_data[byte_count - 1 - i] : input_data[i];
         uint8_t tdo_byte = 0;
         for (int j = 0; j < 8 && bit_count-- > 0; ++j) {
             if (bit_count == 0 && must_end) {

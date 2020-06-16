@@ -91,12 +91,12 @@ void jtag_io_tck(void)
     GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
               BOARD_INITPINS_JTAG_TCK_CHANNEL, 0);
 
-    _sleep(10);
+    _sleep(100);
 
     GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
               BOARD_INITPINS_JTAG_TCK_CHANNEL, 1);
 
-    _sleep(10);
+    _sleep(100);
 
 }
 
@@ -116,13 +116,13 @@ uint32_t pulse_clock_and_read_tdo(void)
 {
     GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
               BOARD_INITPINS_JTAG_TCK_CHANNEL, 0);
-    _sleep(10);
+    _sleep(100);
 
     uint32_t out = jtag_io_tdo();
 
     GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
               BOARD_INITPINS_JTAG_TCK_CHANNEL, 1);
-    _sleep(10);
+    _sleep(100);
 
     return out;
 }

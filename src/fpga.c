@@ -63,11 +63,11 @@ static void fpga_start_program(void)
 
     jtag_init();
 
-    // sleep(1000000);
+    sleep(1000000);
 
-    // jtag_ecp5_read_idcode();
+    jtag_ecp5_read_idcode();
 
-    // read_status_register();
+    read_status_register();
 
     sleep(1000000);
 
@@ -78,15 +78,30 @@ static void fpga_start_program(void)
     ecp_jtag_cmd8(LSC_RESET_CRC, 0);
     sleep(1000000);
 
-    // read_status_register();
+    read_status_register();
 
     ecp_jtag_cmd(LSC_BITSTREAM_BURST);
+    sleep(1000000);
 
 
 }
 
+static uint8_t bit_reverse(uint8_t in){
+
+	uint8_t out =  (in & 0x01) ? 0x80 : 0x00;
+	        out |= (in & 0x02) ? 0x40 : 0x00;
+	        out |= (in & 0x04) ? 0x20 : 0x00;
+	        out |= (in & 0x08) ? 0x10 : 0x00;
+	        out |= (in & 0x10) ? 0x08 : 0x00;
+	        out |= (in & 0x20) ? 0x04 : 0x00;
+	        out |= (in & 0x40) ? 0x02 : 0x00;
+	        out |= (in & 0x80) ? 0x01 : 0x00;
+
+	return out;
+}
+
 static int bytes_transferred;
-void fpga_bitstream_write(const uint8_t *src, uint32_t lba, uint32_t num_blocks)
+void fpga_bitstream_write(uint8_t *src, uint32_t lba, uint32_t len)
 {
     // printf("Got %p %ld %ld\r\n", src, lba, num_blocks);
     if (lba == 0) {
@@ -94,23 +109,27 @@ void fpga_bitstream_write(const uint8_t *src, uint32_t lba, uint32_t num_blocks)
         bytes_transferred = 0;
     }
 
+	for(uint32_t i = 0; i < len; i++){
+		src[i] = bit_reverse(src[i]);
+	}
+
     jtag_go_to_state(STATE_CAPTURE_DR);
-    jtag_tap_shift(src, NULL, num_blocks * 8, false);
-    // fakespi_xfer(src, NULL, num_blocks, 0);
+    jtag_tap_shift(src, NULL, len * 8, false, true);
+
     // Blink to indicate transfer
     GPIO_PinWrite(BOARD_INITPINS_LED_B_PERIPHERAL,
                 BOARD_INITPINS_LED_B_CHANNEL,
                 (bytes_transferred & 0x10000) > 0x8000);
 
-    bytes_transferred += num_blocks * BOARD_FLASH_PAGE_SIZE;
+    bytes_transferred += len;
 }
 
 extern void fpga_bitstream_finish(void)
 {
-    printf("FO\n");
     printf("FI\n");
 
     ecp_jtag_cmd(ISC_DISABLE);
+    // ecp_jtag_cmd(ISC_NOOP);
 
     GPIO_PinWrite(BOARD_INITPINS_LED_B_PERIPHERAL,
                 BOARD_INITPINS_LED_B_CHANNEL, 1);

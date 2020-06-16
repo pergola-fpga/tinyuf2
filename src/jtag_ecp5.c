@@ -41,11 +41,11 @@ void jtag_ecp5_read_idcode() {
 	uint8_t data[4] = {READ_ID};
 
 	jtag_go_to_state(STATE_SHIFT_IR);
-	jtag_tap_shift(data, data, 8, true);
+	jtag_tap_shift(data, data, 8, true, true);
 
 	data[0] = 0;
 	jtag_go_to_state(STATE_SHIFT_DR);
-	jtag_tap_shift(data, data, 32, true);
+	jtag_tap_shift(data, data, 32, true, true);
 
 	uint32_t idcode = 0;
 	
@@ -106,11 +106,11 @@ void read_status_register(void) {
 	uint8_t data[4] = {LSC_READ_STATUS};
 
 	jtag_go_to_state(STATE_SHIFT_IR);
-	jtag_tap_shift(data, data, 8, true);
+	jtag_tap_shift(data, data, 8, true, true);
 
 	data[0] = 0;
 	jtag_go_to_state(STATE_SHIFT_DR);
-	jtag_tap_shift(data, data, 32, true);
+	jtag_tap_shift(data, data, 32, true, true);
 	//jtag_go_to_state(STATE_PAUSE_DR);
 
 	uint32_t status = 0;
@@ -126,7 +126,7 @@ void ecp_jtag_cmd(uint8_t cmd){
     uint8_t data[1] = {cmd};
 
     jtag_go_to_state(STATE_SHIFT_IR);
-    jtag_tap_shift(data, data, 8, true);
+    jtag_tap_shift(data, data, 8, true, true);
 
     jtag_go_to_state(STATE_RUN_TEST_IDLE);
     jtag_wait_time(32);	
@@ -136,13 +136,29 @@ void ecp_jtag_cmd8(uint8_t cmd, uint8_t param){
     uint8_t data[1] = {cmd};
 
     jtag_go_to_state(STATE_SHIFT_IR);
-    jtag_tap_shift(data, data, 8, true);
+    jtag_tap_shift(data, data, 8, true, true);
 
     data[0] = param;
     jtag_go_to_state(STATE_SHIFT_DR);
-    jtag_tap_shift(data, data, 8, true);
+    jtag_tap_shift(data, data, 8, true, true);
 
     jtag_go_to_state(STATE_RUN_TEST_IDLE);
     jtag_wait_time(32);	
 }
 
+void ecp_jtag_enter_spi_background_mode(void) {
+
+	uint8_t data[4] = {0x3A};
+
+	jtag_go_to_state(STATE_SHIFT_IR);
+	jtag_tap_shift(data, data, 8, true, true);
+
+	/* These bytes seem to be required to un-lock the SPI interface */
+	data[0] = 0xFE;
+	data[1] = 0x68;
+	jtag_go_to_state(STATE_SHIFT_DR);
+	jtag_tap_shift(data, data, 16, true, true);
+
+	/* Entering IDLE is essential */
+	jtag_go_to_state(STATE_RUN_TEST_IDLE);
+}

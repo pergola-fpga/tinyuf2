@@ -56,7 +56,8 @@ void jtag_tap_shift(
 	const uint8_t *input_data,
 	uint8_t *output_data,
 	uint32_t data_bits,
-	bool must_end);
+	bool must_end,
+	bool flip);
 
 void jtag_error(int status);
 
