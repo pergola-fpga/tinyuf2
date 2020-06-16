@@ -81,7 +81,6 @@ static void fpga_start_program(void)
     read_status_register();
 
     ecp_jtag_cmd(LSC_BITSTREAM_BURST);
-    sleep(1000000);
 
 
 }
@@ -126,7 +125,7 @@ void fpga_bitstream_write(uint8_t *src, uint32_t lba, uint32_t len)
 
 extern void fpga_bitstream_finish(void)
 {
-    printf("FI\n");
+    // printf("FI\n");
 
     ecp_jtag_cmd(ISC_DISABLE);
     // ecp_jtag_cmd(ISC_NOOP);
@@ -134,7 +133,7 @@ extern void fpga_bitstream_finish(void)
     GPIO_PinWrite(BOARD_INITPINS_LED_B_PERIPHERAL,
                 BOARD_INITPINS_LED_B_CHANNEL, 1);
 
-    // read_status_register();
+    read_status_register();
 }
 
 void fpga_task(void)
