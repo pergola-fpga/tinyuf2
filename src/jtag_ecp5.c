@@ -32,7 +32,7 @@ void jtag_ecp5_read_idcode() {
 	
 	/* Format the IDCODE into a 32bit value */
 	for(int i = 0; i< 4; i++)
-		idcode = data[i] << 24 | idcode >> 8;
+		idcode = data[i] | idcode << 8;
 
 	print_idcode(idcode);
 }
