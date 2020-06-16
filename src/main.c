@@ -32,6 +32,8 @@
 #include "tusb.h"
 #include "hid.h"
 #include "fpga.h"
+#include "jtag_io.h"
+#include "jtag_ecp5.h"
 
 static uint32_t blink_interval_ms = BOARD_BLINK_INTERVAL;
 
@@ -49,6 +51,8 @@ void led_blinking_task(void)
 
     led_state = !led_state;
     board_led_write(led_state);
+
+    jtag_ecp5_read_idcode();
 }
 
 void reset_task(void)
@@ -73,16 +77,17 @@ int main(void)
 #endif
 
     tusb_init();
-    fpga_init();
+    // fpga_init();
+    jtag_io_init();
 
     printf("Hello TinyUF2!\r\n");
 
     while (1) {
         tud_task();
         hf2_hid_task();
-        // led_blinking_task();
+        led_blinking_task();
         reset_task();
-        fpga_task();
+        // fpga_task();
     }
 
     return 0;
