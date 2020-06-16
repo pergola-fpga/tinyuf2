@@ -265,7 +265,7 @@ void process_core(HID_InBuffer *pkt) {
         }
 #ifdef BITSTREAM_START_ADDRESS
         else if (cmd->write_flash_page.target_addr >= BITSTREAM_START_ADDRESS) {
-            printf("Bitstream %08lx\r\n", cmd->write_flash_page.target_addr);
+            // printf("Bitstream %08lx\r\n", cmd->write_flash_page.target_addr);
             fpga_bitstream_write((uint8_t*) cmd->write_flash_page.data, cmd->write_flash_page.target_addr - BITSTREAM_START_ADDRESS, BOARD_FLASH_PAGE_SIZE);
         }
 #endif

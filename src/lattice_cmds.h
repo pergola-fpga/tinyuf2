@@ -44,22 +44,5 @@ enum lattice_cmd
 };
 
 
-struct ecp_device_id {
-	const char* device_name;
-	uint32_t    device_id;
-};
 
-const struct ecp_device_id ecp_devices[] =
-{
-	{"LFE5U-12"   , 0x21111043 },
-	{"LFE5U-25"   , 0x41111043 },
-	{"LFE5U-45"   , 0x41112043 },
-	{"LFE5U-85"   , 0x41113043 },
-	{"LFE5UM-25"  , 0x01111043 },
-	{"LFE5UM-45"  , 0x01112043 },
-	{"LFE5UM-85"  , 0x01113043 },
-	{"LFE5UM5G-25", 0x81111043 },
-	{"LFE5UM5G-45", 0x81112043 },
-	{"LFE5UM5G-85", 0x81113043 }
-};
 

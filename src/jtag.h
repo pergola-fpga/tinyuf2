@@ -53,7 +53,7 @@ void jtag_goto_state(int state);
  * Performs a raw TAP scan.
  */
 void jtag_tap_shift(
-	uint8_t *input_data,
+	const uint8_t *input_data,
 	uint8_t *output_data,
 	uint32_t data_bits,
 	bool must_end);

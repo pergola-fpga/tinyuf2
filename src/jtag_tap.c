@@ -129,28 +129,30 @@ void jtag_init(void)
 }
 
 void jtag_tap_shift(
-    uint8_t *input_data,
+    const uint8_t *input_data,
     uint8_t *output_data,
     uint32_t data_bits,
     bool must_end)
 {
-	uint32_t bit_count = data_bits;
+    uint32_t bit_count = data_bits;
     uint32_t byte_count = (data_bits + 7) / 8;
-	for (uint32_t i = 0; i < byte_count; ++i) {
-		uint8_t byte_out = input_data[byte_count - 1 - i];
-		uint8_t tdo_byte = 0;
-		for (int j = 0; j < 8 && bit_count-- > 0; ++j) {
-			if (bit_count == 0 && must_end) {
-				jtag_io_tms(1);
-				jtag_state_ack(1);
-			}
+    for (uint32_t i = 0; i < byte_count; ++i) {
+        uint8_t byte_out = input_data[byte_count - 1 - i];
+        uint8_t tdo_byte = 0;
+        for (int j = 0; j < 8 && bit_count-- > 0; ++j) {
+            if (bit_count == 0 && must_end) {
+                jtag_io_tms(1);
+                jtag_state_ack(1);
+            }
             jtag_io_tdi(byte_out & 1);
-			byte_out >>= 1;
-			uint32_t tdo = pulse_clock_and_read_tdo();
-			tdo_byte |= tdo << j;
-		}
-		output_data[byte_count - 1 - i] = tdo_byte;
-	}
+            byte_out >>= 1;
+            uint32_t tdo = pulse_clock_and_read_tdo();
+            tdo_byte |= tdo << j;
+        }
+        if (output_data != NULL) {
+            output_data[byte_count - 1 - i] = tdo_byte;
+        }
+    }
 
 }
 
@@ -167,20 +169,20 @@ static void state_step(bool tms)
 {
     jtag_io_tms(tms);
     jtag_io_tck();
-	jtag_state_ack(tms);
+    jtag_state_ack(tms);
 }
 
 void jtag_go_to_state(unsigned state)
 {
-	if (state == STATE_TEST_LOGIC_RESET) {
-		for (int i = 0; i < 5; ++i) {
-			state_step(true);
-		}
-	} else {
-		while (jtag_current_state() != state) {
-			state_step((tms_map[jtag_current_state()] >> state) & 1);
-		}
-	}
+    if (state == STATE_TEST_LOGIC_RESET) {
+        for (int i = 0; i < 5; ++i) {
+            state_step(true);
+        }
+    } else {
+        while (jtag_current_state() != state) {
+            state_step((tms_map[jtag_current_state()] >> state) & 1);
+        }
+    }
 }
 
 void jtag_wait_time(uint32_t microseconds)

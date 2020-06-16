@@ -43,17 +43,18 @@ uint32_t reset_millis = 0;
 void led_blinking_task(void)
 {
     static uint32_t start_ms = 0;
-    static bool led_state = false;
+    // static bool led_state = false;
 
     if (board_millis() - start_ms < blink_interval_ms)
         return;
 
     start_ms += blink_interval_ms;
 
-    led_state = !led_state;
-    board_led_write(led_state);
+    // led_state = !led_state;
+    // board_led_write(led_state);
 
-    jtag_ecp5_read_idcode();
+    // jtag_init();
+    // jtag_ecp5_read_idcode();
 }
 
 void reset_task(void)
@@ -78,9 +79,8 @@ int main(void)
 #endif
 
     tusb_init();
-    // fpga_init();
     jtag_io_init();
-    jtag_init();
+    fpga_init();
 
     printf("Hello TinyUF2!\r\n");
 
@@ -89,7 +89,7 @@ int main(void)
         hf2_hid_task();
         led_blinking_task();
         reset_task();
-        // fpga_task();
+        fpga_task();
     }
 
     return 0;
