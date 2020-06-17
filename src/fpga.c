@@ -64,10 +64,10 @@ static void fpga_start_program(void)
     jtag_init();
     sleep(1000000);
 
-    jtag_ecp5_read_idcode();
+    ecp5_jtag_read_idcode();
     sleep(1000000);
 
-    read_status_register();
+    ecp5_jtag_read_status_register();
     sleep(1000000);
 
     ecp_jtag_cmd8(ISC_ENABLE, 0);
@@ -127,7 +127,7 @@ extern void fpga_bitstream_finish(void)
     GPIO_PinWrite(BOARD_INITPINS_LED_B_PERIPHERAL,
                   BOARD_INITPINS_LED_B_CHANNEL, 1);
 
-    read_status_register();
+    ecp5_jtag_read_status_register();
 
     bytes_transferred = 0;
 }

@@ -54,7 +54,7 @@ void led_blinking_task(void)
     // board_led_write(led_state);
 
     // jtag_init();
-    // jtag_ecp5_read_idcode();
+    // ecp5_jtag_read_idcode();
 }
 
 void reset_task(void)
@@ -81,8 +81,6 @@ int main(void)
     tusb_init();
     jtag_io_init();
     fpga_init();
-
-    printf("Hello TinyUF2!\r\n");
 
     while (1) {
         tud_task();

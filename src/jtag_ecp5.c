@@ -25,18 +25,17 @@ const struct ecp_device_id ecp_devices[] =
 	{"LFE5UM5G-85", 0x81113043 }
 };
 
-static void print_idcode(uint32_t idcode){
+void ecp5_jtag_print_idcode(uint32_t idcode) {
 	for (size_t i = 0; i < sizeof(ecp_devices) / sizeof(struct ecp_device_id); i++) {
 		if (idcode == ecp_devices[i].device_id) {
-			// printf("IDCODE: 0x%08lx (%s)\n", idcode, ecp_devices[i].device_name);
-			printf("%s\n", ecp_devices[i].device_name);
+			printf("IDCODE: 0x%08lx (%s)\n", idcode, ecp_devices[i].device_name);
 			return;
 		}
 	}
 	printf("IDCODE: 0x%08lx does not match :(\n", idcode);
 }
 
-void jtag_ecp5_read_idcode() {
+uint32_t ecp5_jtag_read_idcode(void) {
 
 	uint8_t data[4] = {READ_ID};
 
@@ -53,15 +52,13 @@ void jtag_ecp5_read_idcode() {
 	for(int i = 0; i< 4; i++)
 		idcode = data[i] << 24 | idcode >> 8;
 
-	print_idcode(idcode);
+	return idcode;
 }
 
 
-static void print_status_register(uint32_t status){	
-	// printf("ECP5 Status Register: 0x%08lx\n", status);
-	printf("SR=0x%08lx\n", status);
-    int verbose = 0;
-	if(verbose){
+void print_status_register(uint32_t status, unsigned verbose) {
+	printf("ECP5 Status Register: 0x%08lx\n", status);
+	if (verbose) {
 		printf("  Transparent Mode:   %s\n",  status & (1 << 0)  ? "Yes" : "No" );
 		printf("  Config Target:      %s\n",  status & (7 << 1)  ? "eFuse" : "SRAM" );
 		printf("  JTAG Active:        %s\n",  status & (1 << 4)  ? "Yes" : "No" );
@@ -101,7 +98,7 @@ static void print_status_register(uint32_t status){
 	}
 }
 
-void read_status_register(void) {
+uint32_t ecp5_jtag_read_status_register(void) {
 
 	uint8_t data[4] = {LSC_READ_STATUS};
 
@@ -119,7 +116,7 @@ void read_status_register(void) {
 	for(int i = 0; i< 4; i++)
 		status = data[i] << 24 | status >> 8;
 
-	print_status_register(status);
+	return status;
 }
 
 void ecp_jtag_cmd(uint8_t cmd){
