@@ -152,7 +152,7 @@ void jtag_tap_shift(
             tdo_byte |= tdo << j;
         }
         if (output_data != NULL) {
-            output_data[byte_count - 1 - i] = tdo_byte;
+            output_data[flip ? (byte_count - 1 - i) : i] = tdo_byte;
         }
     }
 
@@ -189,19 +189,7 @@ void jtag_go_to_state(unsigned state)
 
 void jtag_wait_time(uint32_t microseconds)
 {
-    // uint16_t bytes = microseconds / 8;
-    // uint8_t remain = microseconds % 8;
-
-    // uint8_t data[3] = {
-    //     MC_CLK_N8,
-    //     bytes & 0xFF,
-    //     (bytes >> 8) & 0xFF
-    // };
-    // mpsse_xfer(data, 3, 0);
-
-    // if(remain){
-    //     data[0] = MC_CLK_N;
-    //     data[1] = remain;
-    //     mpsse_xfer(data, 2, 0);
-    // }
+	while (microseconds--) {
+		jtag_io_tck();
+	}
 }

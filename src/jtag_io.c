@@ -33,6 +33,8 @@
 #define BOARD_INITPINS_JTAG_TCK_SIGNAL                               gpiomux_io   /*!< GPIO1 signal: gpiomux_io */
 #define BOARD_INITPINS_JTAG_TCK_CHANNEL                                     20U   /*!< GPIO1 gpiomux_io channel: 20 */
 
+const int jtag_sleep = 1;
+
 static void _sleep(int n)
 {
 	while (n--)
@@ -91,12 +93,12 @@ void jtag_io_tck(void)
     GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
               BOARD_INITPINS_JTAG_TCK_CHANNEL, 0);
 
-    _sleep(100);
+    _sleep(jtag_sleep);
 
     GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
               BOARD_INITPINS_JTAG_TCK_CHANNEL, 1);
 
-    _sleep(100);
+    _sleep(jtag_sleep);
 
 }
 
@@ -116,13 +118,13 @@ uint32_t pulse_clock_and_read_tdo(void)
 {
     GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
               BOARD_INITPINS_JTAG_TCK_CHANNEL, 0);
-    _sleep(100);
+    _sleep(jtag_sleep);
 
     uint32_t out = jtag_io_tdo();
 
     GPIO_PinWrite(BOARD_INITPINS_JTAG_TCK_PERIPHERAL,
               BOARD_INITPINS_JTAG_TCK_CHANNEL, 1);
-    _sleep(100);
+    _sleep(jtag_sleep);
 
     return out;
 }

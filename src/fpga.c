@@ -49,7 +49,7 @@ static void sleep(int n)
 
 static void fpga_start_program(void)
 {
-    printf("ST\n");
+    // printf("start\n");
 
     // Toggle PROGRAMN to reset the FPGA. Sleeps are needed.
     GPIO_PinWrite
@@ -63,40 +63,39 @@ static void fpga_start_program(void)
 
     jtag_init();
 
-    sleep(1000000);
-
     jtag_ecp5_read_idcode();
 
     read_status_register();
-
     sleep(1000000);
 
     ecp_jtag_cmd8(ISC_ENABLE, 0);
     sleep(1000000);
-    ecp_jtag_cmd8(ISC_ERASE, 0);
+
+    ecp_jtag_cmd8(ISC_ERASE, 1);
     sleep(1000000);
+
     ecp_jtag_cmd8(LSC_RESET_CRC, 0);
     sleep(1000000);
 
-    read_status_register();
+    ecp_jtag_cmd8(LSC_INIT_ADDRESS, 1);
 
     ecp_jtag_cmd(LSC_BITSTREAM_BURST);
 
-
+    jtag_go_to_state(STATE_CAPTURE_DR);
 }
 
 static uint8_t bit_reverse(uint8_t in){
 
-	uint8_t out =  (in & 0x01) ? 0x80 : 0x00;
-	        out |= (in & 0x02) ? 0x40 : 0x00;
-	        out |= (in & 0x04) ? 0x20 : 0x00;
-	        out |= (in & 0x08) ? 0x10 : 0x00;
-	        out |= (in & 0x10) ? 0x08 : 0x00;
-	        out |= (in & 0x20) ? 0x04 : 0x00;
-	        out |= (in & 0x40) ? 0x02 : 0x00;
-	        out |= (in & 0x80) ? 0x01 : 0x00;
+    uint8_t out =  (in & 0x01) ? 0x80 : 0x00;
+            out |= (in & 0x02) ? 0x40 : 0x00;
+            out |= (in & 0x04) ? 0x20 : 0x00;
+            out |= (in & 0x08) ? 0x10 : 0x00;
+            out |= (in & 0x10) ? 0x08 : 0x00;
+            out |= (in & 0x20) ? 0x04 : 0x00;
+            out |= (in & 0x40) ? 0x02 : 0x00;
+            out |= (in & 0x80) ? 0x01 : 0x00;
 
-	return out;
+    return out;
 }
 
 static int bytes_transferred;
@@ -108,36 +107,36 @@ void fpga_bitstream_write(uint8_t *src, uint32_t lba, uint32_t len)
         bytes_transferred = 0;
     }
 
-	for(uint32_t i = 0; i < len; i++){
-		src[i] = bit_reverse(src[i]);
-	}
+    for(uint32_t i = 0; i < len; i++){
+        src[i] = bit_reverse(src[i]);
+    }
 
-    jtag_go_to_state(STATE_CAPTURE_DR);
-    jtag_tap_shift(src, NULL, len * 8, false, true);
-
-    // Blink to indicate transfer
-    GPIO_PinWrite(BOARD_INITPINS_LED_B_PERIPHERAL,
-                BOARD_INITPINS_LED_B_CHANNEL,
-                (bytes_transferred & 0x10000) > 0x8000);
+    jtag_tap_shift(src, NULL, len * 8, false, false);
 
     bytes_transferred += len;
 }
 
 extern void fpga_bitstream_finish(void)
 {
-    // printf("FI\n");
+    // printf("finish\n");
 
     ecp_jtag_cmd(ISC_DISABLE);
-    // ecp_jtag_cmd(ISC_NOOP);
 
     GPIO_PinWrite(BOARD_INITPINS_LED_B_PERIPHERAL,
-                BOARD_INITPINS_LED_B_CHANNEL, 1);
+                  BOARD_INITPINS_LED_B_CHANNEL, 1);
 
     read_status_register();
+
+    bytes_transferred = 0;
 }
 
 void fpga_task(void)
 {
+    // LED status
+    // Red:   Not done
+    // Green: Done (is on while JTAG is enabled)
+    // Blue:  Transferring
+
     if (GPIO_PinRead(BOARD_INITPINS_FPGA_DONE_PERIPHERAL,
                 BOARD_INITPINS_FPGA_DONE_CHANNEL)) {
         GPIO_PinWrite(BOARD_INITPINS_LED_R_PERIPHERAL,
@@ -150,9 +149,14 @@ void fpga_task(void)
         GPIO_PinWrite(BOARD_INITPINS_LED_G_PERIPHERAL,
                     BOARD_INITPINS_LED_G_CHANNEL, 1);
     }
+
+    // Blink blue LED to indicate transfer
+    GPIO_PinWrite(BOARD_INITPINS_LED_B_PERIPHERAL,
+                  BOARD_INITPINS_LED_B_CHANNEL,
+                  (bytes_transferred & 0x10000) < 0x8000);
 }
 
-void fpga_InitPins(void) {
+void fpga_init_pins(void) {
   /* GPIO configuration of LED_G on GPIO_01 (pin 12) */
   gpio_pin_config_t LED_G_config = {
       .direction = kGPIO_DigitalOutput,
@@ -197,21 +201,18 @@ void fpga_InitPins(void) {
   };
   /* Initialize GPIO functionality on GPIO_AD_07 (pin 51) */
   GPIO_PinInit(GPIO1, 21U, &FPGA_PROGRAMN_config);
-
 }
 
 void fpga_init(void)
 {
-    fpga_InitPins();
+    fpga_init_pins();
 
     GPIO_PinWrite(BOARD_INITPINS_LED_R_PERIPHERAL,
-            BOARD_INITPINS_LED_R_CHANNEL, 1);
+                  BOARD_INITPINS_LED_R_CHANNEL, 1);
     GPIO_PinWrite(BOARD_INITPINS_LED_G_PERIPHERAL,
-            BOARD_INITPINS_LED_G_CHANNEL, 1);
+                  BOARD_INITPINS_LED_G_CHANNEL, 1);
     GPIO_PinWrite(BOARD_INITPINS_LED_B_PERIPHERAL,
-            BOARD_INITPINS_LED_B_CHANNEL, 1);
-
-   GPIO_PinWrite(BOARD_INITPINS_FPGA_PROGRAMN_PERIPHERAL,
-              BOARD_INITPINS_FPGA_PROGRAMN_CHANNEL, 0);
-
+                  BOARD_INITPINS_LED_B_CHANNEL, 1);
+    GPIO_PinWrite(BOARD_INITPINS_FPGA_PROGRAMN_PERIPHERAL,
+                  BOARD_INITPINS_FPGA_PROGRAMN_CHANNEL, 0);
 }
