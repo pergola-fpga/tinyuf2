@@ -62,8 +62,10 @@ static void fpga_start_program(void)
     sleep(1000000);
 
     jtag_init();
+    sleep(1000000);
 
     jtag_ecp5_read_idcode();
+    sleep(1000000);
 
     read_status_register();
     sleep(1000000);
