@@ -101,10 +101,10 @@ static uint8_t bit_reverse(uint8_t in){
 }
 
 static int bytes_transferred;
-void fpga_bitstream_write(uint8_t *src, uint32_t lba, uint32_t len)
+void fpga_bitstream_write(uint8_t *src, uint32_t offset, uint32_t len)
 {
-    // printf("Got %p %ld %ld\r\n", src, lba, num_blocks);
-    if (lba == 0) {
+    // printf("Got %p %ld %ld\r\n", src, offset, len);
+    if (offset == 0) {
         fpga_start_program();
         bytes_transferred = 0;
     }
@@ -152,17 +152,16 @@ void fpga_task(void)
                     BOARD_INITPINS_LED_G_CHANNEL, 1);
     }
 
-    // Blink blue LED to indicate transfer
     GPIO_PinWrite(BOARD_INITPINS_LED_B_PERIPHERAL,
                   BOARD_INITPINS_LED_B_CHANNEL,
-                  (bytes_transferred & 0x10000) < 0x8000);
+                  ((bytes_transferred & 0x8000) < 0x4000));
 }
 
 void fpga_init_pins(void) {
   /* GPIO configuration of LED_G on GPIO_01 (pin 12) */
   gpio_pin_config_t LED_G_config = {
       .direction = kGPIO_DigitalOutput,
-      .outputLogic = 0U,
+      .outputLogic = 1U,
       .interruptMode = kGPIO_NoIntmode
   };
   /* Initialize GPIO functionality on GPIO_01 (pin 12) */
@@ -171,7 +170,7 @@ void fpga_init_pins(void) {
   /* GPIO configuration of LED_R on GPIO_02 (pin 11) */
   gpio_pin_config_t LED_R_config = {
       .direction = kGPIO_DigitalOutput,
-      .outputLogic = 0U,
+      .outputLogic = 1U,
       .interruptMode = kGPIO_NoIntmode
   };
   /* Initialize GPIO functionality on GPIO_02 (pin 11) */
@@ -180,7 +179,7 @@ void fpga_init_pins(void) {
   /* GPIO configuration of LED_B on GPIO_03 (pin 10) */
   gpio_pin_config_t LED_B_config = {
       .direction = kGPIO_DigitalOutput,
-      .outputLogic = 0U,
+      .outputLogic = 1U,
       .interruptMode = kGPIO_NoIntmode
   };
   /* Initialize GPIO functionality on GPIO_03 (pin 10) */
