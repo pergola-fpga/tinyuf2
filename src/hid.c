@@ -216,6 +216,8 @@ void process_core(HID_InBuffer *pkt) {
 
 #define checkDataSize(str, add) assert(sz == 8 + sizeof(cmd->str) + (add))
 
+    unsigned skip_response = 0;
+
     switch (cmdId) {
     case HF2_CMD_INFO:
         tmp = strlen(infoUf2File);
@@ -243,6 +245,8 @@ void process_core(HID_InBuffer *pkt) {
 #ifdef BITSTREAM_START_ADDRESS
         if (last_address >= BITSTREAM_START_ADDRESS) {
             fpga_bitstream_finish();
+            // Do not send a response since the hf2 client expects the device to reboot.
+            skip_response = 1;
         }
 #endif
         break;
@@ -295,7 +299,9 @@ void process_core(HID_InBuffer *pkt) {
         break;
     }
 
-    send_hf2_response(pkt, 0);
+    if (!skip_response) {
+        send_hf2_response(pkt, 0);
+    }
 }
 
 #endif // HF2_USE_HID
